@@ -12,9 +12,6 @@ namespace GnomePlushV2.Behaviours
         public AudioClip gnomeSound;
         public AudioClip gnomeSoundReverb;
         public AudioSource gnomeAudioSource;
-        public int gnomeSoundsMaxInterval = 130; //seconds
-        public int gnomeSoundsMinInterval = 50;  //seconds
-        public int gnomeReverbSoundChance = 10;  //in percent
         public float gnomeVolume = 0.5f;
 
         //public bool randomizeVolume = true;
@@ -36,7 +33,7 @@ namespace GnomePlushV2.Behaviours
             base.Update();
             if (!isGnomeSoundsSet)
             {
-                gnomeSoundsInterval = UnityEngine.Random.Range(gnomeSoundsMinInterval, gnomeSoundsMaxInterval);
+                gnomeSoundsInterval = UnityEngine.Random.Range(GnomeConfig.Instance.GNOME_NOISES_MIN_INTERVAL, GnomeConfig.Instance.GNOME_NOISES_MAX_INTERVAL);
                 isGnomeSoundsSet = true;
             }
 
@@ -55,13 +52,17 @@ namespace GnomePlushV2.Behaviours
 
                 //play sound
                 randomNumberSoundInterval = UnityEngine.Random.Range(1, 100);
-                if (randomNumberSoundInterval <= gnomeReverbSoundChance)
+                if (randomNumberSoundInterval <= GnomeConfig.Instance.GNOME_REVERB_CHANCE)
                 {
                     gnomeAudioSource.PlayOneShot(gnomeSoundReverb);
                 }
                 else
                 {
                     gnomeAudioSource.PlayOneShot(gnomeSound);
+                    GnomePlushV2.Logger.LogDebug("played normal gnome sound. MaxIntrvl is: " 
+                        + GnomeConfig.Instance.GNOME_NOISES_MAX_INTERVAL + "MinIntrvl is: " 
+                        + GnomeConfig.Instance.GNOME_NOISES_MIN_INTERVAL + "ReverbChance is: "
+                        + GnomeConfig.Instance.GNOME_REVERB_CHANCE);
                 }
                 isGnomeSoundsSet = false;
 
