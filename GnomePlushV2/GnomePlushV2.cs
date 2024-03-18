@@ -13,6 +13,7 @@ namespace GnomePlushV2
 {
     [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
     [BepInDependency("evaisa.lethallib", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("io.github.CSync", BepInDependency.DependencyFlags.HardDependency)]
     public class GnomePlushV2 : BaseUnityPlugin
     {
         public static GnomePlushV2 Instance { get; private set; } = null!;
@@ -21,10 +22,9 @@ namespace GnomePlushV2
         internal static GnomeConfig gnomeConfig;
 
         private const string gnomeAssetbundleName = "gnomeassets";
-        private const string gnomeItemPropertiesLocation = "Assets/Scrap/Gnome/HGnome.asset";
-        private const int gnomeRarity = 50;
+        private const string gnomeItemPropertiesLocation = "Assets/Scrap/Gnome/GnomePlush.asset";
 
-        private static bool areGnomeAsstesValid = true;
+        internal static bool areGnomeAsstesValid = true;
 
 
         private void Awake()
@@ -76,25 +76,27 @@ namespace GnomePlushV2
             gnomeScript.grabbableToEnemies = true;
             gnomeScript.itemProperties = gnomeItem;
             gnomeScript.gnomeAudioSource = audioSource;
-            gnomeScript.scrapValue = 60;
 
             foreach (AudioClip clip in audioClips)
             {
-                if (clip.name.Equals("whoo"))
+                switch (clip.name)
                 {
-                    gnomeScript.gnomeSound = clip;
-                    Logger.LogDebug("found sound 1");
-                }
-                if (clip.name.Equals("whoo with reverb"))
-                {
-                    gnomeScript.gnomeSoundReverb = clip;
-                    Logger.LogDebug("found sound 2");
+                    case "whoo":
+                        gnomeScript.gnomeSound = clip;
+                        Logger.LogDebug("found whoo sfx");
+                        break;
+                    case "whoo with reverb":
+                        gnomeScript.gnomeSoundReverb = clip;
+                        Logger.LogDebug("found whoo with reverb sfx");
+                        break;
+                    default:
+                        Logger.LogDebug("found unecessary clip: " + name);
+                        break;
                 }
             }
 
             if (areGnomeAsstesValid)
             {
-
                 NetworkPrefabs.RegisterNetworkPrefab(gnomeItem.spawnPrefab);
                 Utilities.FixMixerGroups(gnomeItem.spawnPrefab);
                 Items.RegisterScrap(gnomeItem, GnomeConfig.Instance.GNOME_SCRAP_RARITY, Levels.LevelTypes.All);
@@ -103,7 +105,7 @@ namespace GnomePlushV2
             }
             else
             {
-                Logger.LogError("Something went wrong, game won't spawn gnomes.");
+                Logger.LogError("Something went wrong, gnome mod broke. Now the gnomes are unhappy and won't spawn. >:c");
             }
         }
     }
