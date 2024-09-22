@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace GnomePlushV2.Behaviours
@@ -27,17 +23,60 @@ namespace GnomePlushV2.Behaviours
         private bool isGnomeSoundIntervalSet = false;
         private int gamblingForReverb;
 
+        private System.Random noiseRandom = new System.Random(333);
+
+        private float randomScale;
+        private float bigGnomeWidth = 1.70f;
+
+        public override void Start()
+        {
+            base.Start();
+            int randomNumber = GnomePlushV2.random.Next(1, 100);
+            GnomePlushV2.Logger.LogInfo(randomNumber);
+
+            float totalChanceValue = GnomePlushV2.gnomeConfig.TINY_GNOME_SIZE_CHANCE.Value + GnomePlushV2.gnomeConfig.DEFAULT_GNOME_SIZE_CHANCE.Value + GnomePlushV2.gnomeConfig.BIG_GNOME_SIZE_CHANCE.Value;
+            float defaultChance = (GnomePlushV2.gnomeConfig.DEFAULT_GNOME_SIZE_CHANCE.Value / totalChanceValue) * 100;
+            float bigChance = (GnomePlushV2.gnomeConfig.BIG_GNOME_SIZE_CHANCE.Value / totalChanceValue) * 100;
+
+            GnomePlushV2.Logger.LogInfo("defCh:" + defaultChance);
+            GnomePlushV2.Logger.LogInfo("bigCh:" + bigChance);
+
+            if (randomNumber <= defaultChance)
+            {
+                randomScale = GnomePlushV2.random.Next(9, 15);
+            } else if (randomNumber > defaultChance && randomNumber <= defaultChance + bigChance)
+            {
+                randomScale = GnomePlushV2.random.Next(16, 35);
+            } else
+            {
+                randomScale = (GnomePlushV2.random.Next(3, 8));
+            }
+
+            randomScale /= 10;
+
+            GnomePlushV2.Logger.LogInfo("rs: " + randomScale);
+        }
+
         public override void Update()
         {
             base.Update();
 
-            if (GnomeConfig.Instance.IS_GNOME_NOISE_ENABLED)
+            if (randomScale > 2.5f)
+            {
+                this.transform.localScale = new Vector3(randomScale * bigGnomeWidth, randomScale, randomScale * bigGnomeWidth);
+            }
+            else
+            {
+                this.transform.localScale = Vector3.one * randomScale;
+            }
+
+            if (GnomePlushV2.gnomeConfig.IS_GNOME_NOISE_ENABLED)
             {
                 if (!isGnomeSoundIntervalSet)
                 {
-                    int minInterval = GnomeConfig.Instance.GNOME_NOISES_MIN_INTERVAL;
-                    int maxInterval = GnomeConfig.Instance.GNOME_NOISES_MAX_INTERVAL;
-                    gnomeSoundInterval = UnityEngine.Random.Range(minInterval, maxInterval);
+                    int minInterval = (int) (0.5 * 101 - GnomePlushV2.gnomeConfig.GNOME_NOISES_FREQUENCY);
+                    int maxInterval = (int)(1.3 * 101 - GnomePlushV2.gnomeConfig.GNOME_NOISES_FREQUENCY);
+                    gnomeSoundInterval = noiseRandom.Next(minInterval, maxInterval);
                     isGnomeSoundIntervalSet = true;
                 }
 
@@ -58,21 +97,18 @@ namespace GnomePlushV2.Behaviours
         {
             ResetRandomNumbersForGnomeSound();
 
-            gnomeVolume = GnomeConfig.Instance.GNOME_NOISE_BASE_VOLUME / 100f;
+            gnomeVolume = GnomePlushV2.gnomeConfig.GNOME_NOISE_BASE_VOLUME / 100f;
             gnomePitch = GNOME_NOISE_BASE_PITCH;
 
-            int randomVolChangeAmount = GnomeConfig.Instance.GNOME_NOISE_VOLUME_CHANGE_AMOUNT.Value;
+            int randomVolChangeAmount = GnomePlushV2.gnomeConfig.GNOME_NOISE_VOLUME_CHANGE_AMOUNT.Value;
             int randVolMin = 100 - randomVolChangeAmount;
             int randVolMax = 100 + randomVolChangeAmount;
 
-            randomNumberVolumeChange = UnityEngine.Random.Range(randVolMin, randVolMax);
+            randomNumberVolumeChange = noiseRandom.Next(randVolMin, randVolMax);
             randomNumberVolumeChange /= 100;
             gnomeVolume *= randomNumberVolumeChange;
 
-            GnomePlushV2.Logger.LogDebug($"changed volume to: {gnomeVolume}, " +
-                $"volume change amount was: {randomNumberVolumeChange * 100}%");
-
-            int randomPitchChangeAmount = GnomeConfig.Instance.GNOME_NOISE_PITCH_CHANGE_AMOUNT.Value;
+            int randomPitchChangeAmount = GnomePlushV2.gnomeConfig.GNOME_NOISE_PITCH_CHANGE_AMOUNT.Value;
             int randPitchMin = 100 - (int)(randomPitchChangeAmount * PITCH_MULTIPLIER);               //less probability of lower noises, bc I just don't like the lower whoos that much
             int randPitchMax = 100 + randomPitchChangeAmount;                         
 
@@ -81,12 +117,12 @@ namespace GnomePlushV2.Behaviours
                 randPitchMin = 0;
             }
 
-            randomNumberPitchChange = UnityEngine.Random.Range(randPitchMin, randPitchMax);
+            randomNumberPitchChange = noiseRandom.Next(randPitchMin, randPitchMax);
             randomNumberPitchChange /= 100;
-            gnomePitch *= randomNumberPitchChange;
 
-            GnomePlushV2.Logger.LogDebug($"changed pitch to: {gnomePitch}, " +
-                $"pitch change amount was: {randomNumberPitchChange * 100}%");
+            gnomePitch /= Math.Clamp((randomScale - 1), 1f, 1.3f);
+
+            gnomePitch *= randomNumberPitchChange;
         }
 
 
@@ -97,8 +133,8 @@ namespace GnomePlushV2.Behaviours
             gnomeAudioSource.dopplerLevel = 1f;                 //for some reason this NEEDS to be on in order for the pitch to work
                                                                 //my guess is that LethalLibs FixMixerGroup resets this to 0 or smth
 
-            gamblingForReverb = UnityEngine.Random.Range(1, 100);
-            if (gamblingForReverb <= GnomeConfig.Instance.GNOME_REVERB_CHANCE)
+            gamblingForReverb = noiseRandom.Next(1, 100);
+            if (gamblingForReverb <= GnomePlushV2.gnomeConfig.GNOME_REVERB_CHANCE)
             {
                 gnomeAudioSource.pitch = gnomePitch;
                 gnomeAudioSource.PlayOneShot(gnomeSoundReverb);
@@ -111,7 +147,7 @@ namespace GnomePlushV2.Behaviours
                 WalkieTalkie.TransmitOneShotAudio(gnomeAudioSource, gnomeSound, gnomeVolume - GNOME_NOISE_WALKIE_VOLUME_OFFSET);
             }
 
-            if (GnomeConfig.Instance.CAN_GNOME_ANGER_DOGS)
+            if (GnomePlushV2.gnomeConfig.CAN_GNOME_ANGER_DOGS)
             {
                 RoundManager.Instance.PlayAudibleNoise(base.transform.position, GNOME_NOISE_RANGE, gnomeVolume, 0, isInElevator && StartOfRound.Instance.hangarDoorsClosed, 69420);
             }
@@ -120,7 +156,7 @@ namespace GnomePlushV2.Behaviours
         //Resets some random values to their base values, bc they are multiplied in CalcRandomNumbersForGnomeSound()
         private void ResetRandomNumbersForGnomeSound()
         {
-            gnomeVolume = GnomeConfig.Instance.GNOME_NOISE_BASE_VOLUME / 100f;
+            gnomeVolume = GnomePlushV2.gnomeConfig.GNOME_NOISE_BASE_VOLUME / 100f;
             gnomePitch = GNOME_NOISE_BASE_PITCH;
             gnomeAudioSource.pitch = GNOME_NOISE_BASE_PITCH;
         }

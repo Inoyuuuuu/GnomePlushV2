@@ -13,13 +13,14 @@ namespace GnomePlushV2
 {
     [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
     [BepInDependency("evaisa.lethallib", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency("io.github.CSync", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("com.sigurd.csync", "5.0.1")] 
     public class GnomePlushV2 : BaseUnityPlugin
     {
         public static GnomePlushV2 Instance { get; private set; } = null!;
         internal new static ManualLogSource Logger { get; private set; } = null!;
         internal static Harmony? Harmony { get; set; }
         internal static GnomeConfig gnomeConfig;
+        internal static System.Random random = new System.Random(0);
 
         private const string gnomeAssetbundleName = "gnomeassets";
         private const string gnomeItemPropertiesLocation = "Assets/Scrap/Gnome/GnomePlush.asset";
@@ -90,7 +91,6 @@ namespace GnomePlushV2
                         Logger.LogDebug("found whoo with reverb sfx");
                         break;
                     default:
-                        Logger.LogDebug("found unecessary clip: " + name);
                         break;
                 }
             }
@@ -99,9 +99,9 @@ namespace GnomePlushV2
             {
                 NetworkPrefabs.RegisterNetworkPrefab(gnomeItem.spawnPrefab);
                 Utilities.FixMixerGroups(gnomeItem.spawnPrefab);
-                Items.RegisterScrap(gnomeItem, GnomeConfig.Instance.GNOME_SCRAP_RARITY, Levels.LevelTypes.All);
+                Items.RegisterScrap(gnomeItem, GnomePlushV2.gnomeConfig.GNOME_SCRAP_RARITY, Levels.LevelTypes.All);
 
-                Logger.LogInfo("Gnome awaits you in the dungeons...");
+                Logger.LogInfo("Gnomes await you in the dungeons...");
             }
             else
             {
