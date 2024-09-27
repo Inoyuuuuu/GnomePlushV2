@@ -11,6 +11,8 @@ namespace GnomePlushV2
     [DataContract]
     internal class GnomeConfig : SyncedConfig2<GnomeConfig>
     {
+        internal ConfigEntry<int> GNOME_NOISE_BASE_VOLUME;
+
         [SyncedEntryField]
         internal SyncedEntry<int> GNOME_SCRAP_RARITY;
         [SyncedEntryField]
@@ -18,7 +20,7 @@ namespace GnomePlushV2
         [SyncedEntryField]
         internal SyncedEntry<bool> CAN_GNOME_ANGER_DOGS;
         [SyncedEntryField]
-        internal SyncedEntry<int> GNOME_NOISE_BASE_VOLUME, GNOME_REVERB_CHANCE, GNOME_NOISES_FREQUENCY, GNOME_NOISE_VOLUME_CHANGE_AMOUNT, GNOME_NOISE_PITCH_CHANGE_AMOUNT;
+        internal SyncedEntry<int>  GNOME_REVERB_CHANCE, GNOME_NOISES_FREQUENCY, GNOME_NOISE_PITCH_CHANGE_AMOUNT;
         [SyncedEntryField]
         internal SyncedEntry<int> TINY_GNOME_SIZE_CHANCE, DEFAULT_GNOME_SIZE_CHANCE, BIG_GNOME_SIZE_CHANCE;
 
@@ -26,7 +28,6 @@ namespace GnomePlushV2
         private const int gnomeSoundsFrequency_DV = 60;           
         private const int gnomeReverbSoundChance_DV = 10;       
         private const int gnomeNoiseBaseVolume_DV = 60;         
-        private const int gnomeNoiseVolumeChangeAmount_DV = 40;  
         private const int gnomeNoisePitchChangeAmount_DV = 15;   
         private const int tinyGnomeSizeChance_DV = 15;          
         private const int defaultGnomeSizeChance_DV = 70;  
@@ -37,20 +38,18 @@ namespace GnomePlushV2
 
         public GnomeConfig(ConfigFile cfg) : base(MyPluginInfo.PLUGIN_GUID)
         {
+            GNOME_NOISE_BASE_VOLUME = cfg.Bind("GnomeNoises", "gnomeNoiseBaseVolume", gnomeNoiseBaseVolume_DV,
+                new ConfigDescription("The base volume of gnome-noises.", new AcceptableValueRange<int>(0, 100)));
+
+
             GNOME_SCRAP_RARITY = cfg.BindSyncedEntry("Gnome", "gnomeRarity", gnomeRarity_DV, 
                 new ConfigDescription("Sets the rarity of the gnome plush.", new AcceptableValueRange<int>(1, 500)));
-
             IS_GNOME_NOISE_ENABLED = cfg.BindSyncedEntry("GnomeBehaviour", "isGnomeNoiseEnabled", isGnomeNoiseEnabled_DV, "Should the gnome make gnome-noises?");
             CAN_GNOME_ANGER_DOGS = cfg.BindSyncedEntry("GnomeBehaviour", "canGnomeAngerDogs", canGnomeAngerDogs_DV, "Should the gnome-noises be able to trigger eyeless dogs or other monsters?");
-
-            GNOME_NOISE_BASE_VOLUME = cfg.BindSyncedEntry("GnomeNoises", "gnomeNoiseBaseVolume", gnomeNoiseBaseVolume_DV, 
-                new ConfigDescription("The base volume of gnome-noises. Max value: 100", new AcceptableValueRange<int>(0, 100)));
             GNOME_REVERB_CHANCE = cfg.BindSyncedEntry("GnomeNoises", "gnomeReverbNoiseChance", gnomeReverbSoundChance_DV, 
                 new ConfigDescription("Sets the chance of a reverb gnome noise happening (in percent).", new AcceptableValueRange<int>(0, 100)));
             GNOME_NOISES_FREQUENCY = cfg.BindSyncedEntry("GnomeNoises", "gnomeNoisesFrequency", gnomeSoundsFrequency_DV, 
                 new ConfigDescription("The higher the value, the more frequent the gnome noises.", new AcceptableValueRange<int>(1, 100)));
-            GNOME_NOISE_VOLUME_CHANGE_AMOUNT = cfg.BindSyncedEntry("GnomeNoises", "RandomVolumeChange_Amount", gnomeNoiseVolumeChangeAmount_DV,
-                new ConfigDescription("Higher values will make the gnome noise vary more in volume (in percent). \n (each gnome-noise volume is randomized).", new AcceptableValueRange<int>(0, 100)));
             GNOME_NOISE_PITCH_CHANGE_AMOUNT = cfg.BindSyncedEntry("GnomeNoises", "RandomPitchChange_Amount", gnomeNoisePitchChangeAmount_DV, 
                 new ConfigDescription("Higher values will make the gnome noises vary more in pitch (in percent). \n (each gnome-noise's pitch is randomized).", new AcceptableValueRange<int>(0, 100)));
             TINY_GNOME_SIZE_CHANCE = cfg.BindSyncedEntry("GnomeSize", "tinyGnomeSizeChance", tinyGnomeSizeChance_DV,

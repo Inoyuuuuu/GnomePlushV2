@@ -1,60 +1,57 @@
-﻿using System;
+﻿using BepInEx.Logging;
+using System;
+using Unity.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace GnomePlushV2.Behaviours
 {
-    internal class GnomeScript : GrabbableObject
+    public class GnomeScript : GrabbableObject
     {
         public AudioClip gnomeSound;
         public AudioClip gnomeSoundReverb;
         public AudioSource gnomeAudioSource;
 
         private const float PITCH_MULTIPLIER = 0.85f;
-        private const float GNOME_NOISE_WALKIE_VOLUME_OFFSET = 0.3f;
+        private const float GNOME_NOISE_WALKIE_VOLUME_OFFSET = 0.25f;
         private const float GNOME_NOISE_BASE_PITCH = 1f;
         private const float GNOME_NOISE_RANGE = 8f;
 
-        public bool randomizeVolume = true;
-        public float gnomeVolume;
-        private float randomNumberVolumeChange;
-        public float gnomePitch = 1f;
         private float randomNumberPitchChange;
         private float gnomeSoundInterval;
         private bool isGnomeSoundIntervalSet = false;
-        private int gamblingForReverb;
-
-        private System.Random noiseRandom = new System.Random(333);
 
         private float randomScale;
+        private int randomIndex;
+        private int[] tinySizes = [3, 4, 5, 8, 10];
+        private int[] defaultSizes = [10, 10, 12, 15, 18];
+        private int[] bigSizes = [21, 25, 28, 30, 37];
         private float bigGnomeWidth = 1.70f;
 
         public override void Start()
         {
             base.Start();
-            int randomNumber = GnomePlushV2.random.Next(1, 100);
-            GnomePlushV2.Logger.LogInfo(randomNumber);
+
+            int randomNumber = GnomePlushV2.randomSize.Next(1, 100);
 
             float totalChanceValue = GnomePlushV2.gnomeConfig.TINY_GNOME_SIZE_CHANCE.Value + GnomePlushV2.gnomeConfig.DEFAULT_GNOME_SIZE_CHANCE.Value + GnomePlushV2.gnomeConfig.BIG_GNOME_SIZE_CHANCE.Value;
             float defaultChance = (GnomePlushV2.gnomeConfig.DEFAULT_GNOME_SIZE_CHANCE.Value / totalChanceValue) * 100;
             float bigChance = (GnomePlushV2.gnomeConfig.BIG_GNOME_SIZE_CHANCE.Value / totalChanceValue) * 100;
 
-            GnomePlushV2.Logger.LogInfo("defCh:" + defaultChance);
-            GnomePlushV2.Logger.LogInfo("bigCh:" + bigChance);
+            randomIndex = GnomePlushV2.randomSize.Next(0, 5);
 
             if (randomNumber <= defaultChance)
             {
-                randomScale = GnomePlushV2.random.Next(9, 15);
+                randomScale = defaultSizes[randomIndex];
             } else if (randomNumber > defaultChance && randomNumber <= defaultChance + bigChance)
             {
-                randomScale = GnomePlushV2.random.Next(16, 35);
+                randomScale = bigSizes[randomIndex];
             } else
             {
-                randomScale = (GnomePlushV2.random.Next(3, 8));
+                randomScale = tinySizes[randomIndex];
             }
 
             randomScale /= 10;
-
-            GnomePlushV2.Logger.LogInfo("rs: " + randomScale);
         }
 
         public override void Update()
@@ -70,13 +67,14 @@ namespace GnomePlushV2.Behaviours
                 this.transform.localScale = Vector3.one * randomScale;
             }
 
-            if (GnomePlushV2.gnomeConfig.IS_GNOME_NOISE_ENABLED)
+            if (this.IsSpawned && NetworkManager.Singleton.IsServer)
             {
+                // Only server controls the timing
                 if (!isGnomeSoundIntervalSet)
                 {
-                    int minInterval = (int) (0.5 * 101 - GnomePlushV2.gnomeConfig.GNOME_NOISES_FREQUENCY);
-                    int maxInterval = (int)(1.3 * 101 - GnomePlushV2.gnomeConfig.GNOME_NOISES_FREQUENCY);
-                    gnomeSoundInterval = noiseRandom.Next(minInterval, maxInterval);
+                    int minInterval = (int)(0.5f * (101 - GnomePlushV2.gnomeConfig.GNOME_NOISES_FREQUENCY));
+                    int maxInterval = (int)(1.3f * (101 - GnomePlushV2.gnomeConfig.GNOME_NOISES_FREQUENCY));
+                    gnomeSoundInterval = GnomePlushV2.randomNoise.Next(minInterval, maxInterval);
                     isGnomeSoundIntervalSet = true;
                 }
 
@@ -84,66 +82,50 @@ namespace GnomePlushV2.Behaviours
 
                 if (gnomeSoundInterval <= 0)
                 {
-                    CalcRandomNumbersForGnomeSound();
-                    PlayGnomeSound(gnomeAudioSource);
-
+                    PlayGnomeSound(CalcRandomGnomePitch());
                     isGnomeSoundIntervalSet = false;
                 }
             }
         }
 
-        //Calculates the random volume and random pitch
-        private void CalcRandomNumbersForGnomeSound()
+        private float CalcRandomGnomePitch()
         {
-            ResetRandomNumbersForGnomeSound();
 
-            gnomeVolume = GnomePlushV2.gnomeConfig.GNOME_NOISE_BASE_VOLUME / 100f;
-            gnomePitch = GNOME_NOISE_BASE_PITCH;
+            float gnomePitch = GNOME_NOISE_BASE_PITCH;
 
-            int randomVolChangeAmount = GnomePlushV2.gnomeConfig.GNOME_NOISE_VOLUME_CHANGE_AMOUNT.Value;
-            int randVolMin = 100 - randomVolChangeAmount;
-            int randVolMax = 100 + randomVolChangeAmount;
-
-            randomNumberVolumeChange = noiseRandom.Next(randVolMin, randVolMax);
-            randomNumberVolumeChange /= 100;
-            gnomeVolume *= randomNumberVolumeChange;
-
-            int randomPitchChangeAmount = GnomePlushV2.gnomeConfig.GNOME_NOISE_PITCH_CHANGE_AMOUNT.Value;
-            int randPitchMin = 100 - (int)(randomPitchChangeAmount * PITCH_MULTIPLIER);               //less probability of lower noises, bc I just don't like the lower whoos that much
-            int randPitchMax = 100 + randomPitchChangeAmount;                         
+            float randomPitchChangeAmount = GnomePlushV2.gnomeConfig.GNOME_NOISE_PITCH_CHANGE_AMOUNT.Value;
+            float randPitchMin = 100 - (int)(randomPitchChangeAmount * PITCH_MULTIPLIER);               //less probability of lower noises, bc I just don't like the lower whoos that much
+            float randPitchMax = 100 + randomPitchChangeAmount;                         
 
             if (randPitchMin < 0)
             {
                 randPitchMin = 0;
             }
-
-            randomNumberPitchChange = noiseRandom.Next(randPitchMin, randPitchMax);
+            randomNumberPitchChange = GnomePlushV2.randomNoise.Next((int) randPitchMin, (int) randPitchMax);
             randomNumberPitchChange /= 100;
 
             gnomePitch /= Math.Clamp((randomScale - 1), 1f, 1.3f);
 
             gnomePitch *= randomNumberPitchChange;
+
+            return gnomePitch;
         }
 
 
         //Plays a gnome sound
-        private void PlayGnomeSound(AudioSource gnomeAudioSource)
+        private void PlayGnomeSound(float randomPitch)
         {
-            gnomeAudioSource.volume = gnomeVolume;
-            gnomeAudioSource.dopplerLevel = 1f;                 //for some reason this NEEDS to be on in order for the pitch to work
-                                                                //my guess is that LethalLibs FixMixerGroup resets this to 0 or smth
+            int gnomeVolume = GnomePlushV2.gnomeConfig.GNOME_NOISE_BASE_VOLUME.Value / 100;
+            int randomChance = GnomePlushV2.randomNoise.Next(0, 100);
 
-            gamblingForReverb = noiseRandom.Next(1, 100);
-            if (gamblingForReverb <= GnomePlushV2.gnomeConfig.GNOME_REVERB_CHANCE)
+            if (randomChance < GnomePlushV2.gnomeConfig.GNOME_REVERB_CHANCE.Value)
             {
-                gnomeAudioSource.pitch = gnomePitch;
-                gnomeAudioSource.PlayOneShot(gnomeSoundReverb);
+                PlayGnomeReverbSoundClientRpc(randomPitch);
                 WalkieTalkie.TransmitOneShotAudio(gnomeAudioSource, gnomeSoundReverb, gnomeVolume - GNOME_NOISE_WALKIE_VOLUME_OFFSET);
             }
             else
             {
-                gnomeAudioSource.pitch = gnomePitch;
-                gnomeAudioSource.PlayOneShot(gnomeSound);
+                PlayGnomeSoundClientRpc(randomPitch);
                 WalkieTalkie.TransmitOneShotAudio(gnomeAudioSource, gnomeSound, gnomeVolume - GNOME_NOISE_WALKIE_VOLUME_OFFSET);
             }
 
@@ -153,12 +135,110 @@ namespace GnomePlushV2.Behaviours
             }
         }
 
-        //Resets some random values to their base values, bc they are multiplied in CalcRandomNumbersForGnomeSound()
-        private void ResetRandomNumbersForGnomeSound()
+        [ClientRpc]
+        public void PlayGnomeSoundClientRpc(float gnomePitch)
         {
-            gnomeVolume = GnomePlushV2.gnomeConfig.GNOME_NOISE_BASE_VOLUME / 100f;
-            gnomePitch = GNOME_NOISE_BASE_PITCH;
-            gnomeAudioSource.pitch = GNOME_NOISE_BASE_PITCH;
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+            if (__rpc_exec_stage != __RpcExecStage.Client && (networkManager.IsServer || networkManager.IsHost))
+            {
+                ClientRpcParams clientRpcParams = default(ClientRpcParams);
+                FastBufferWriter bufferWriter = __beginSendClientRpc(152346789u, clientRpcParams, RpcDelivery.Reliable);
+                BytePacker.WriteValuePacked(bufferWriter, gnomePitch);
+                __endSendClientRpc(ref bufferWriter, 152346789u, clientRpcParams, RpcDelivery.Reliable);
+            }
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+                ChangePitch(gnomePitch);
+                gnomeAudioSource.PlayOneShot(gnomeSound);
+            }
+        }
+
+        [ClientRpc]
+        public void PlayGnomeReverbSoundClientRpc(float gnomePitch)
+        {
+            NetworkManager networkManager = base.NetworkManager;
+            if ((object)networkManager == null || !networkManager.IsListening)
+            {
+                return;
+            }
+
+            if (__rpc_exec_stage != __RpcExecStage.Client && (networkManager.IsServer || networkManager.IsHost))
+            {
+                ClientRpcParams clientRpcParams = default(ClientRpcParams);
+                FastBufferWriter bufferWriter = __beginSendClientRpc(623146789u, clientRpcParams, RpcDelivery.Reliable);
+                BytePacker.WriteValuePacked(bufferWriter, gnomePitch);
+                __endSendClientRpc(ref bufferWriter, 623146789u, clientRpcParams, RpcDelivery.Reliable);
+            }
+
+            if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
+            {
+                ChangePitch(gnomePitch);
+                gnomeAudioSource.PlayOneShot(gnomeSoundReverb);
+            }
+        }
+
+        public static void __rpc_handler_152346789(NetworkBehaviour target, FastBufferReader reader, __RpcParams rpcParams)
+        {
+            NetworkManager networkManager = target.NetworkManager;
+
+            if (networkManager != null && networkManager.IsListening)
+            {
+                ByteUnpacker.ReadValuePacked(reader, out float pitchValue);
+
+                ((GnomeScript)target).__rpc_exec_stage = __RpcExecStage.Client;
+                ((GnomeScript)target).ChangePitch(pitchValue);
+                ((GnomeScript)target).gnomeAudioSource.PlayOneShot(((GnomeScript)target).gnomeSound);
+                ((GnomeScript)target).__rpc_exec_stage = __RpcExecStage.None;
+            }
+            else
+            {
+                Debug.LogError("NetworkManager is not listening or null in RPC handler");
+            }
+        }
+
+        public static void __rpc_handler_623146789(NetworkBehaviour target, FastBufferReader reader, __RpcParams rpcParams)
+        {
+            NetworkManager networkManager = target.NetworkManager;
+
+            if (networkManager != null && networkManager.IsListening)
+            {
+                ByteUnpacker.ReadValuePacked(reader, out float pitchValue);
+
+                ((GnomeScript)target).__rpc_exec_stage = __RpcExecStage.Client;
+                ((GnomeScript)target).ChangePitch(pitchValue);
+                ((GnomeScript)target).gnomeAudioSource.PlayOneShot(((GnomeScript)target).gnomeSoundReverb);
+                ((GnomeScript)target).__rpc_exec_stage = __RpcExecStage.None;
+            }
+            else
+            {
+                Debug.LogError("NetworkManager is not listening or null in RPC handler");
+            }
+        }
+
+
+        [RuntimeInitializeOnLoadMethod]
+        internal static void InitializeRPCS_GnomeScript()
+        {
+            NetworkManager.__rpc_func_table.Add(152346789u, __rpc_handler_152346789);
+            NetworkManager.__rpc_func_table.Add(623146789u, __rpc_handler_623146789);
+        }
+
+        private void ChangePitch(float targetPitch)
+        {
+            gnomeAudioSource.dopplerLevel = 1f;
+            gnomeAudioSource.pitch = targetPitch;
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsClient)
+            {
+                Debug.Log("Client has spawned and is ready.");
+            }
         }
 
         public override void EquipItem()

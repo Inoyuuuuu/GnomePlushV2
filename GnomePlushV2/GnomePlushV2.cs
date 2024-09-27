@@ -20,13 +20,14 @@ namespace GnomePlushV2
         internal new static ManualLogSource Logger { get; private set; } = null!;
         internal static Harmony? Harmony { get; set; }
         internal static GnomeConfig gnomeConfig;
-        internal static System.Random random = new System.Random(0);
+
+        internal static System.Random randomSize = new System.Random(4554);
+        internal static System.Random randomNoise = new System.Random(5445);
 
         private const string gnomeAssetbundleName = "gnomeassets";
         private const string gnomeItemPropertiesLocation = "Assets/Scrap/Gnome/GnomePlush.asset";
 
         internal static bool areGnomeAsstesValid = true;
-
 
         private void Awake()
         {
@@ -34,6 +35,8 @@ namespace GnomePlushV2
             Instance = this;
             gnomeConfig = new GnomeConfig(Config);
             Logger.LogInfo("GnomePlush awake");
+
+            GnomeScript.InitializeRPCS_GnomeScript();
 
             string gnomeAssetDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), gnomeAssetbundleName);
             AssetBundle gnomeBundle = AssetBundle.LoadFromFile(gnomeAssetDir);
@@ -101,12 +104,25 @@ namespace GnomePlushV2
                 Utilities.FixMixerGroups(gnomeItem.spawnPrefab);
                 Items.RegisterScrap(gnomeItem, GnomePlushV2.gnomeConfig.GNOME_SCRAP_RARITY, Levels.LevelTypes.All);
 
+                Patch();
+
                 Logger.LogInfo("Gnomes await you in the dungeons...");
             }
             else
             {
                 Logger.LogError("Something went wrong, gnome mod broke. Now the gnomes are unhappy and won't spawn. >:c");
             }
+        }
+
+        internal static void Patch()
+        {
+            Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
+
+            Logger.LogDebug("Patching...");
+
+            Harmony.PatchAll();
+
+            Logger.LogDebug("Finished patching!");
         }
     }
 }
