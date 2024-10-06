@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using GnomePlushV2.Behaviours;
+using GnomePlushV2.Patches;
 using HarmonyLib;
 using LethalLib.Modules;
 using System.Collections.Generic;
@@ -13,7 +14,8 @@ namespace GnomePlushV2
 {
     [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
     [BepInDependency("evaisa.lethallib", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency("com.sigurd.csync", "5.0.1")] 
+    [BepInDependency("com.sigurd.csync", "5.0.1")]
+    [BepInDependency("SylviBlossom.SmartItemSaving", BepInDependency.DependencyFlags.SoftDependency)]
     public class GnomePlushV2 : BaseUnityPlugin
     {
         public static GnomePlushV2 Instance { get; private set; } = null!;
@@ -21,13 +23,16 @@ namespace GnomePlushV2
         internal static Harmony? Harmony { get; set; }
         internal static GnomeConfig gnomeConfig;
 
-        internal static System.Random randomSize = new System.Random(4554);
-        internal static System.Random randomNoise = new System.Random(5445);
+        internal static System.Random randomSize = new System.Random(303);
+        internal static System.Random randomNoise = new System.Random(404);
+
+        internal static int randomSeed = 0;
 
         private const string gnomeAssetbundleName = "gnomeassets";
         private const string gnomeItemPropertiesLocation = "Assets/Scrap/Gnome/GnomePlush.asset";
 
         internal static bool areGnomeAsstesValid = true;
+
 
         private void Awake()
         {
