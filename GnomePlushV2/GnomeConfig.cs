@@ -61,7 +61,7 @@ namespace GnomePlushV2
             BIG_GNOME_SIZE_CHANCE = cfg.BindSyncedEntry("GnomeSize", "bigGnomeSizeChance", bigGnomeSizeChance_DV,
                 new ConfigDescription("Chance of big Gnomes to appear (relative to the values of the other size-chances).", new AcceptableValueRange<int>(0, 100)));
             EXPERIMENTAL_SIZE_MULTIPLIER = cfg.BindSyncedEntry("z_EXPERIMENTAL", "experimentalSizeMultiplier", experimentalSizeMultiplier_DV,
-                new ConfigDescription("Increases the size of ALL gnomes (by a lot)! High values might lead to unforseen bugs/glitches!!!", new AcceptableValueRange<float>(1f, 100f)));
+                new ConfigDescription("Increases the size of ALL gnomes (by a lot)! High values might lead to unforseen bugs/glitches!!!", new AcceptableValueRange<float>(1f, 10f)));
             ConfigManager.Register(this);
         }
     }

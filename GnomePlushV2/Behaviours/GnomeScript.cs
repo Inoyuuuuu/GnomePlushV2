@@ -17,7 +17,6 @@ namespace GnomePlushV2.Behaviours
         private const float GNOME_NOISE_BASE_PITCH = 1f;
         private const float GNOME_NOISE_RANGE = 8f;
         public readonly float BIG_GNOME_WIDTH = 1.65f;
-        public readonly float BIG_GNOME_GRABBING_OFFSET = 1f;
 
         private float randomNumberPitchChange;
         private float gnomeSoundInterval;
@@ -120,7 +119,6 @@ namespace GnomePlushV2.Behaviours
             return gnomePitch;
         }
 
-
         private void PlayGnomeSound(float randomPitch)
         {
             int gnomeVolume = GnomePlushV2.gnomeConfig.GNOME_NOISE_BASE_VOLUME.Value / 100;
@@ -141,6 +139,11 @@ namespace GnomePlushV2.Behaviours
             {
                 RoundManager.Instance.PlayAudibleNoise(base.transform.position, GNOME_NOISE_RANGE, gnomeVolume, 0, isInElevator && StartOfRound.Instance.hangarDoorsClosed, 69420);
             }
+        }
+        private void ChangePitch(float targetPitch)
+        {
+            gnomeAudioSource.dopplerLevel = 1f;
+            gnomeAudioSource.pitch = targetPitch;
         }
 
         [ClientRpc]
@@ -211,7 +214,6 @@ namespace GnomePlushV2.Behaviours
                 if (gnomeSize > 2.5f)
                 {
                     this.transform.localScale = new Vector3(gnomeSize * BIG_GNOME_WIDTH, gnomeSize, gnomeSize * BIG_GNOME_WIDTH);
-                    this.itemProperties.positionOffset = new Vector3(this.itemProperties.positionOffset.x + BIG_GNOME_GRABBING_OFFSET, this.itemProperties.positionOffset.y, this.itemProperties.positionOffset.z);
                 }
                 else
                 {
@@ -289,12 +291,6 @@ namespace GnomePlushV2.Behaviours
             NetworkManager.__rpc_func_table.Add(152346789u, __rpc_handler_152346789);
             NetworkManager.__rpc_func_table.Add(623146789u, __rpc_handler_623146789);
             NetworkManager.__rpc_func_table.Add(178238291u, __rpc_handler_178238291);
-        }
-
-        private void ChangePitch(float targetPitch)
-        {
-            gnomeAudioSource.dopplerLevel = 1f;
-            gnomeAudioSource.pitch = targetPitch;
         }
 
         public override void OnNetworkSpawn()
