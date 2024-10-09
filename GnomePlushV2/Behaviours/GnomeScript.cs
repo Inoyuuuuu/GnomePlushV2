@@ -16,7 +16,8 @@ namespace GnomePlushV2.Behaviours
         private const float GNOME_NOISE_WALKIE_VOLUME_OFFSET = 0.25f;
         private const float GNOME_NOISE_BASE_PITCH = 1f;
         private const float GNOME_NOISE_RANGE = 8f;
-        public readonly float BIG_GNOME_WIDTH = 1.65f;
+        public readonly float BIG_GNOME_WIDTH = 1.53f;
+        public readonly float BIG_GNOME_THRESHOLD = 2.2f;
 
         private float randomNumberPitchChange;
         private float gnomeSoundInterval;
@@ -25,16 +26,16 @@ namespace GnomePlushV2.Behaviours
 
         private float randomScale = 1f;
         private int randomIndex;
-        private int[] tinySizes = [3, 3, 5, 6, 7];
+        private int[] tinySizes = [3, 5, 5, 6, 7];
         private int[] defaultSizes = [10, 10, 12, 13, 14];
-        private int[] bigSizes = [18, 18, 20, 24, 37];
+        private int[] bigSizes = [18, 18, 20, 23, 33];
 
         public override void Start()
         {
             int randomNumber = 50;
-            int totalChanceValue = GnomePlushV2.gnomeConfig.TINY_GNOME_SIZE_CHANCE.Value + GnomePlushV2.gnomeConfig.DEFAULT_GNOME_SIZE_CHANCE.Value + GnomePlushV2.gnomeConfig.BIG_GNOME_SIZE_CHANCE.Value;
-            float tinyChance = (GnomePlushV2.gnomeConfig.TINY_GNOME_SIZE_CHANCE.Value / (float)totalChanceValue) * 100;
-            float defaultChance = (GnomePlushV2.gnomeConfig.DEFAULT_GNOME_SIZE_CHANCE.Value / (float)totalChanceValue) * 100;
+            int totalChanceValue = GnomePlushV2.gnomeConfig.TINY_GNOME_SIZE_SPAWN_CHANCE.Value + GnomePlushV2.gnomeConfig.DEFAULT_GNOME_SIZE_SPAWN_CHANCE.Value + GnomePlushV2.gnomeConfig.BIG_GNOME_SIZE_SPAWN_CHANCE.Value;
+            float tinyChance = (GnomePlushV2.gnomeConfig.TINY_GNOME_SIZE_SPAWN_CHANCE.Value / (float)totalChanceValue) * 100;
+            float defaultChance = (GnomePlushV2.gnomeConfig.DEFAULT_GNOME_SIZE_SPAWN_CHANCE.Value / (float)totalChanceValue) * 100;
 
             gnomeCount++;
             randomNoise = new System.Random(400 + (gnomeCount));
@@ -211,7 +212,7 @@ namespace GnomePlushV2.Behaviours
 
             if (__rpc_exec_stage == __RpcExecStage.Client && (networkManager.IsClient || networkManager.IsHost))
             {
-                if (gnomeSize > 2.5f)
+                if (gnomeSize > BIG_GNOME_THRESHOLD)
                 {
                     this.transform.localScale = new Vector3(gnomeSize * BIG_GNOME_WIDTH, gnomeSize, gnomeSize * BIG_GNOME_WIDTH);
                 }
@@ -269,7 +270,7 @@ namespace GnomePlushV2.Behaviours
                 ByteUnpacker.ReadValuePacked(reader, out float gnomeSize);
 
                 ((GnomeScript)target).__rpc_exec_stage = __RpcExecStage.Client;
-                if (gnomeSize > 2.5f)
+                if (gnomeSize > ((GnomeScript)target).BIG_GNOME_THRESHOLD)
                 {
                     ((GnomeScript)target).transform.localScale = new Vector3(gnomeSize * ((GnomeScript)target).BIG_GNOME_WIDTH, gnomeSize, gnomeSize * ((GnomeScript)target).BIG_GNOME_WIDTH);
                 }
