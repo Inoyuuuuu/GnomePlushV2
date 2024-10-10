@@ -52,7 +52,7 @@ namespace GnomePlushV2
                 new ConfigDescription("Sets the chance of a reverb gnome noise happening (in percent).", new AcceptableValueRange<int>(0, 100)));
             GNOME_NOISES_FREQUENCY = cfg.BindSyncedEntry("GnomeNoises", "gnomeNoisesFrequency", gnomeSoundsFrequency_DV, 
                 new ConfigDescription("The higher the value, the more frequent the gnome noises.", new AcceptableValueRange<int>(1, 100)));
-            GNOME_NOISE_PITCH_CHANGE_AMOUNT = cfg.BindSyncedEntry("GnomeNoises", "RandomPitchChange_Amount", gnomeNoisePitchChangeAmount_DV, 
+            GNOME_NOISE_PITCH_CHANGE_AMOUNT = cfg.BindSyncedEntry("GnomeNoises", "RandomPitchChangeAmount", gnomeNoisePitchChangeAmount_DV, 
                 new ConfigDescription("Higher values will make the gnome noises vary more in pitch (in percent). \n (each gnome-noise's pitch is randomized).", new AcceptableValueRange<int>(0, 100)));
             TINY_GNOME_SIZE_SPAWN_CHANCE = cfg.BindSyncedEntry("GnomeSize", "tinySizeSpawnChance", tinySizeSpawnChance_DV,
                 new ConfigDescription("Rarity of tiny gnomes (relative to the values of the other gnome sizes). LOWER VALUE = RARER", new AcceptableValueRange<int>(0, 100)));
